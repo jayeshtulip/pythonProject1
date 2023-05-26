@@ -1,0 +1,165 @@
+<html>
+<head>
+<title>count_of_word.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #6897bb;}
+.s4 { color: #808080;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+count_of_word.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">botocore.exceptions </span><span class="s0">import </span><span class="s1">NoCredentialsError</span><span class="s0">, </span><span class="s1">ClientError</span>
+<span class="s0">import </span><span class="s1">boto3</span>
+<span class="s0">import </span><span class="s1">paramiko</span>
+<span class="s0">import </span><span class="s1">urllib3</span>
+<span class="s0">import </span><span class="s1">time</span>
+<span class="s0">import </span><span class="s1">os</span>
+<span class="s1">urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)</span>
+<span class="s1">CLUSTER_IP = </span><span class="s2">'10.16.145.159'</span>
+<span class="s1">INSTANCE_TYPE = </span><span class="s2">'t2.medium'</span>
+<span class="s1">ec2 = boto3.client(</span>
+        <span class="s1">service_name=</span><span class="s2">&quot;ec2&quot;</span><span class="s0">, </span><span class="s1">region_name=</span><span class="s2">&quot;zCompute&quot;</span><span class="s0">,</span>
+        <span class="s1">endpoint_url=</span><span class="s2">&quot;https://%s/api/v2/ec2/&quot; </span><span class="s1">% CLUSTER_IP</span><span class="s0">,</span>
+        <span class="s1">verify=</span><span class="s0">False</span>
+    <span class="s1">)</span>
+<span class="s1">key_pair_name = </span><span class="s2">'key-14-05'</span>
+<span class="s1">response = ec2.create_key_pair(KeyName=key_pair_name)</span>
+<span class="s1">private_key_path = </span><span class="s2">r'C:\Users\jayes\Downloads\key-14-05.pem'</span>
+<span class="s1">private_key_content = response[</span><span class="s2">'KeyMaterial'</span><span class="s1">]</span>
+<span class="s1">key_permissions = </span><span class="s3">0o400</span>
+<span class="s1">os.chmod(private_key_path</span><span class="s0">, </span><span class="s1">key_permissions)</span>
+
+<span class="s4"># Validate the permissions</span>
+<span class="s1">stat_info = os.stat(private_key_path)</span>
+<span class="s1">file_permissions = stat_info.st_mode &amp; </span><span class="s3">0o400 </span><span class="s4"># Extract the permissions from the file's mode</span>
+
+<span class="s0">if </span><span class="s1">file_permissions == key_permissions:</span>
+    <span class="s1">print(</span><span class="s2">&quot;Correct permissions set for the file.&quot;</span><span class="s1">)</span>
+<span class="s0">else</span><span class="s1">:</span>
+    <span class="s1">print(</span><span class="s2">&quot;Permissions mismatch for the file.&quot;</span><span class="s1">)</span>
+<span class="s0">with </span><span class="s1">open(private_key_path</span><span class="s0">, </span><span class="s2">'w'</span><span class="s1">) </span><span class="s0">as </span><span class="s1">key_file:</span>
+    <span class="s1">key_file.write(private_key_content)</span>
+
+<span class="s4"># Set permissions on the private key file</span>
+
+<span class="s1">username = </span><span class="s2">'ubuntu'</span>
+<span class="s1">name_prefix = </span><span class="s2">&quot;my-test-13-05-2023-vm&quot;</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(</span><span class="s3">1</span><span class="s0">,</span><span class="s3">2</span><span class="s1">):</span>
+    <span class="s1">vm_name = </span><span class="s2">f&quot; </span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+    <span class="s1">vm = ec2.run_instances(</span>
+        <span class="s1">ImageId=</span><span class="s2">&quot;ami-4b1eb7cfe99147ca93f6abdc90a17d8f&quot;</span><span class="s0">,  </span><span class="s4"># Debian 9 AMI</span>
+        <span class="s1">InstanceType=</span><span class="s2">&quot;t2.micro&quot;</span><span class="s0">,</span>
+        <span class="s1">KeyName=key_pair_name</span><span class="s0">,</span>
+        <span class="s1">MaxCount=</span><span class="s3">1</span><span class="s0">,</span>
+        <span class="s1">MinCount=</span><span class="s3">1</span><span class="s0">,</span>
+        <span class="s1">TagSpecifications=[</span>
+            <span class="s1">{</span>
+                <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;instance&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                        <span class="s2">&quot;Value&quot;</span><span class="s1">: vm_name</span>
+                    <span class="s1">}</span>
+                <span class="s1">]</span>
+            <span class="s1">}</span>
+        <span class="s1">]</span>
+    <span class="s1">)</span>
+    <span class="s1">instance_id = vm[</span><span class="s2">&quot;Instances&quot;</span><span class="s1">][</span><span class="s3">0</span><span class="s1">][</span><span class="s2">&quot;InstanceId&quot;</span><span class="s1">]</span>
+    <span class="s1">waiter = ec2.get_waiter(</span><span class="s2">'instance_running'</span><span class="s1">)</span>
+    <span class="s1">waiter.wait(InstanceIds=[instance_id</span><span class="s0">, </span><span class="s1">])</span>
+    <span class="s1">eip_allocation = ec2.allocate_address(</span>
+        <span class="s1">Domain=</span><span class="s2">'vpc'</span><span class="s0">,</span>
+        <span class="s1">TagSpecifications=[</span>
+            <span class="s1">{</span>
+                <span class="s2">'ResourceType'</span><span class="s1">: </span><span class="s2">'elastic-ip'</span><span class="s0">,</span>
+                <span class="s2">'Tags'</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">'Key'</span><span class="s1">: </span><span class="s2">'Name'</span><span class="s0">,</span>
+                        <span class="s2">'Value'</span><span class="s1">: </span><span class="s2">'my-elastic-ip'</span>
+                    <span class="s1">}</span><span class="s0">,</span>
+                <span class="s1">]</span>
+            <span class="s1">}</span><span class="s0">,</span>
+        <span class="s1">]</span>
+    <span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">f'Allocation ID </span><span class="s0">{</span><span class="s1">eip_allocation[</span><span class="s2">&quot;AllocationId&quot;</span><span class="s1">]</span><span class="s0">}</span><span class="s2">'</span><span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">f'  - Elastic IP </span><span class="s0">{</span><span class="s1">eip_allocation[</span><span class="s2">&quot;PublicIp&quot;</span><span class="s1">]</span><span class="s0">} </span><span class="s2">has been allocated'</span><span class="s1">)</span>
+    <span class="s1">allocation_response1 = ec2.associate_address(</span>
+        <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+        <span class="s1">AllocationId=eip_allocation[</span><span class="s2">&quot;AllocationId&quot;</span><span class="s1">]</span>
+    <span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">&quot;instance with public ip created&quot;</span><span class="s1">)</span>
+
+    <span class="s1">volume_name = </span><span class="s2">f&quot;Volume </span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-volume-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+    <span class="s4">#print(&quot;tst1&quot;)</span>
+    <span class="s1">volume = ec2.create_volume(</span>
+        <span class="s1">AvailabilityZone=</span><span class="s2">'symphony'</span><span class="s0">,</span>
+        <span class="s1">Size=</span><span class="s3">1</span><span class="s0">,</span>
+        <span class="s1">VolumeType=</span><span class="s2">'vt-boto3'</span><span class="s0">,</span>
+        <span class="s1">TagSpecifications=[</span>
+            <span class="s1">{</span>
+                <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;volume&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                        <span class="s2">&quot;Value&quot;</span><span class="s1">: volume_name</span>
+                    <span class="s1">}</span>
+                <span class="s1">]</span>
+            <span class="s1">}</span>
+        <span class="s1">]</span>
+    <span class="s1">)</span>
+    <span class="s4">#print(&quot;test2&quot;)</span>
+    <span class="s1">volume_id = volume[</span><span class="s2">&quot;VolumeId&quot;</span><span class="s1">]</span>
+    <span class="s4"># Attach the volume to the VM</span>
+    <span class="s1">waiter = ec2.get_waiter(</span><span class="s2">'volume_available'</span><span class="s1">)</span>
+    <span class="s1">waiter.wait(VolumeIds=[volume_id</span><span class="s0">, </span><span class="s1">])</span>
+    <span class="s1">ec2.attach_volume(</span>
+        <span class="s1">Device=</span><span class="s2">&quot;/dev/sdm&quot;</span><span class="s0">,</span>
+        <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+        <span class="s1">VolumeId=volume_id</span>
+    <span class="s1">)</span>
+    <span class="s1">time.sleep(</span><span class="s3">2</span><span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">&quot;Attached EBS: {0} to instance {1}:&quot; </span><span class="s1">.format(volume_id</span><span class="s0">,</span><span class="s1">instance_id))</span>
+    <span class="s1">public_ip = eip_allocation[</span><span class="s2">&quot;PublicIp&quot;</span><span class="s1">]</span>
+    <span class="s4">#ec2.create_snapshot(VolumeId=volume_id, Description=&quot;Snapshot of EC2 instance{i}&quot;)</span>
+    <span class="s0">try</span><span class="s1">:</span>
+        <span class="s4"># Create a Paramiko SSH client</span>
+        <span class="s1">ssh_client = paramiko.SSHClient()</span>
+        <span class="s1">ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())</span>
+
+        <span class="s4"># Load the PPK key</span>
+        <span class="s1">key = paramiko.RSAKey.from_private_key_file(private_key_path)</span>
+
+        <span class="s4"># Connect to the VM using the private key and username</span>
+        <span class="s1">ssh_client.connect(hostname=public_ip</span><span class="s0">, </span><span class="s1">username=</span><span class="s2">'ubuntu'</span><span class="s0">, </span><span class="s1">pkey=key)</span>
+
+        <span class="s4"># Perform operations on the VM</span>
+        <span class="s1">stdin</span><span class="s0">, </span><span class="s1">stdout</span><span class="s0">, </span><span class="s1">stderr = ssh_client.exec_command(</span><span class="s2">'ls -l'</span><span class="s1">)</span>
+
+        <span class="s4"># Print the output</span>
+        <span class="s1">print(stdout.read().decode())</span>
+
+        <span class="s4"># Close the SSH connection</span>
+        <span class="s1">ssh_client.close()</span>
+
+    <span class="s0">except </span><span class="s1">ClientError </span><span class="s0">as </span><span class="s1">e:</span>
+        <span class="s1">print(</span><span class="s2">&quot;An error occurred while connecting to the instance:&quot;</span><span class="s0">, </span><span class="s1">e)</span>
+
+    <span class="s0">except </span><span class="s1">paramiko.AuthenticationException:</span>
+        <span class="s1">print(</span><span class="s2">&quot;Authentication failed. Please check your SSH key and username.&quot;</span><span class="s1">)</span>
+
+    <span class="s0">except </span><span class="s1">paramiko.SSHException </span><span class="s0">as </span><span class="s1">ssh_exception:</span>
+        <span class="s1">print(</span><span class="s2">&quot;An error occurred while establishing SSH connection:&quot;</span><span class="s0">, </span><span class="s1">ssh_exception)</span>
+
+    <span class="s0">except </span><span class="s1">Exception </span><span class="s0">as </span><span class="s1">e:</span>
+        <span class="s1">print(</span><span class="s2">&quot;An error occurred:&quot;</span><span class="s0">, </span><span class="s1">e)</span>
+</pre>
+</body>
+</html>

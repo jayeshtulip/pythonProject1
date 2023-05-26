@@ -1,0 +1,312 @@
+<html>
+<head>
+<title>volumes-testing-improvement.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+volumes-testing-improvement.py</font>
+</center></td></tr></table>
+<pre><span class="s0">from </span><span class="s1">botocore.exceptions </span><span class="s0">import </span><span class="s1">NoCredentialsError</span><span class="s0">, </span><span class="s1">ClientError</span>
+<span class="s0">import </span><span class="s1">boto3</span>
+<span class="s0">import </span><span class="s1">paramiko</span>
+<span class="s0">import </span><span class="s1">urllib3</span>
+<span class="s0">import </span><span class="s1">time</span>
+<span class="s0">import </span><span class="s1">re</span>
+<span class="s0">import </span><span class="s1">subprocess</span>
+<span class="s0">import </span><span class="s1">os</span>
+
+<span class="s1">urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)</span>
+<span class="s1">CLUSTER_IP = </span><span class="s2">'10.16.145.79'</span>
+<span class="s1">INSTANCE_TYPE = </span><span class="s2">'t2.medium'</span>
+<span class="s1">ec2 = boto3.client(</span>
+        <span class="s1">service_name=</span><span class="s2">&quot;ec2&quot;</span><span class="s0">, </span><span class="s1">region_name=</span><span class="s2">&quot;zCompute&quot;</span><span class="s0">,</span>
+        <span class="s1">endpoint_url=</span><span class="s2">&quot;https://%s/api/v2/ec2/&quot; </span><span class="s1">% CLUSTER_IP</span><span class="s0">,</span>
+        <span class="s1">verify=</span><span class="s0">False</span>
+    <span class="s1">)</span>
+
+<span class="s3"># Key pair name and file path</span>
+<span class="s1">key_pair_name = </span><span class="s2">'vpc2'</span>
+<span class="s1">private_key_path = </span><span class="s2">r'C:\Users\jayes\Downloads\vpc2.pem'</span>
+<span class="s1">key_permissions = </span><span class="s4">0o400</span>
+<span class="s2">''' 
+try: 
+    # Create an EC2 client 
+    key_pair = ec2.create_key_pair(KeyName=key_pair_name) 
+except ClientError as e: 
+    if e.response['Error']['Code'] == 'InvalidKeyPair.Duplicate': 
+        print(&quot;Key pair 'vpc-15' already exists.&quot;) 
+    else: 
+        print(&quot;An error occurred:&quot;, e) 
+ 
+'''</span>
+<span class="s0">try</span><span class="s1">:</span>
+    <span class="s3"># Create key pair</span>
+    <span class="s1">key_pair = ec2.create_key_pair(KeyName=key_pair_name)</span>
+<span class="s0">except </span><span class="s1">ClientError </span><span class="s0">as </span><span class="s1">e:</span>
+    <span class="s0">if </span><span class="s1">e.response[</span><span class="s2">'Error'</span><span class="s1">][</span><span class="s2">'Code'</span><span class="s1">] == </span><span class="s2">'InvalidKeyPair.Duplicate'</span><span class="s1">:</span>
+        <span class="s1">print(</span><span class="s2">&quot;Key pair 'vpc-15' already exists.&quot;</span><span class="s1">)</span>
+    <span class="s0">else</span><span class="s1">:</span>
+        <span class="s1">print(</span><span class="s2">&quot;An error occurred:&quot;</span><span class="s0">, </span><span class="s1">e)</span>
+<span class="s0">finally</span><span class="s1">:</span>
+    <span class="s3"># Launch EC2 instance</span>
+    <span class="s1">username = </span><span class="s2">'ubuntu'</span>
+    <span class="s1">name_prefix = </span><span class="s2">&quot;test-25-05-2023-vm&quot;</span>
+    <span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(</span><span class="s4">1</span><span class="s0">,</span><span class="s4">10</span><span class="s1">):</span>
+       <span class="s1">vm_name = </span><span class="s2">f&quot; </span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+       <span class="s1">vm = ec2.run_instances(</span>
+           <span class="s1">ImageId=</span><span class="s2">&quot;ami-045b56a405d14f36b04380715ef410a3&quot;</span><span class="s0">,  </span><span class="s3"># Debian 9 AMI</span>
+           <span class="s1">InstanceType=</span><span class="s2">&quot;t2.micro&quot;</span><span class="s0">,</span>
+           <span class="s1">KeyName=key_pair_name</span><span class="s0">,</span>
+           <span class="s1">MaxCount=</span><span class="s4">1</span><span class="s0">,</span>
+           <span class="s1">MinCount=</span><span class="s4">1</span><span class="s0">,</span>
+           <span class="s1">TagSpecifications=[</span>
+               <span class="s1">{</span>
+                   <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;instance&quot;</span><span class="s0">,</span>
+                   <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                       <span class="s1">{</span>
+                           <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                           <span class="s2">&quot;Value&quot;</span><span class="s1">: vm_name</span>
+                       <span class="s1">}</span>
+                   <span class="s1">]</span>
+               <span class="s1">}</span>
+           <span class="s1">]</span>
+       <span class="s1">)</span>
+       <span class="s1">instance_id = vm[</span><span class="s2">&quot;Instances&quot;</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s2">&quot;InstanceId&quot;</span><span class="s1">]</span>
+       <span class="s1">waiter = ec2.get_waiter(</span><span class="s2">'instance_running'</span><span class="s1">)</span>
+       <span class="s1">waiter.wait(InstanceIds=[instance_id</span><span class="s0">, </span><span class="s1">])</span>
+       <span class="s1">eip_allocation = ec2.allocate_address(</span>
+           <span class="s1">Domain=</span><span class="s2">'vpc'</span><span class="s0">,</span>
+           <span class="s1">TagSpecifications=[</span>
+               <span class="s1">{</span>
+                   <span class="s2">'ResourceType'</span><span class="s1">: </span><span class="s2">'elastic-ip'</span><span class="s0">,</span>
+                   <span class="s2">'Tags'</span><span class="s1">: [</span>
+                       <span class="s1">{</span>
+                           <span class="s2">'Key'</span><span class="s1">: </span><span class="s2">'Name'</span><span class="s0">,</span>
+                           <span class="s2">'Value'</span><span class="s1">: </span><span class="s2">'my-elastic-ip'</span>
+                       <span class="s1">}</span><span class="s0">,</span>
+                   <span class="s1">]</span>
+               <span class="s1">}</span><span class="s0">,</span>
+           <span class="s1">]</span>
+       <span class="s1">)</span>
+       <span class="s3">#print(f'Allocation ID {eip_allocation[&quot;AllocationId&quot;]}')</span>
+       <span class="s3">#print(f'  - Elastic IP {eip_allocation[&quot;PublicIp&quot;]} has been allocated')</span>
+       <span class="s1">allocation_response1 = ec2.associate_address(</span>
+           <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+           <span class="s1">AllocationId=eip_allocation[</span><span class="s2">&quot;AllocationId&quot;</span><span class="s1">]</span>
+       <span class="s1">)</span>
+       <span class="s1">volume_name = </span><span class="s2">f&quot;Volume </span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-volume-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+       <span class="s3">#print(&quot;tst1&quot;)</span>
+       <span class="s1">volume = ec2.create_volume(</span>
+           <span class="s1">AvailabilityZone=</span><span class="s2">'symphony'</span><span class="s0">,</span>
+           <span class="s1">Size=</span><span class="s4">10</span><span class="s0">,</span>
+           <span class="s1">VolumeType=</span><span class="s2">'199-vsa28-second'</span><span class="s0">,</span>
+           <span class="s1">TagSpecifications=[</span>
+               <span class="s1">{</span>
+                   <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;volume&quot;</span><span class="s0">,</span>
+                   <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                       <span class="s1">{</span>
+                           <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                           <span class="s2">&quot;Value&quot;</span><span class="s1">: volume_name</span>
+                      <span class="s1">}</span>
+                   <span class="s1">]</span>
+               <span class="s1">}</span>
+           <span class="s1">]</span>
+       <span class="s1">)</span>
+       <span class="s3">#print(&quot;test2&quot;)</span>
+       <span class="s1">volume_id = volume[</span><span class="s2">&quot;VolumeId&quot;</span><span class="s1">]</span>
+       <span class="s1">formatted_volume_id = re.sub(</span><span class="s2">r'vol-([a-f0-9]{8})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{12})'</span><span class="s0">,</span>
+                                    <span class="s2">r'\1-\2-\3-\4-\5'</span><span class="s0">, </span><span class="s1">volume_id)</span>
+       <span class="s3"># Attach the volume to the VM</span>
+       <span class="s1">waiter = ec2.get_waiter(</span><span class="s2">'volume_available'</span><span class="s1">)</span>
+       <span class="s1">waiter.wait(VolumeIds=[volume_id</span><span class="s0">, </span><span class="s1">])</span>
+       <span class="s1">ec2.attach_volume(</span>
+           <span class="s1">Device=</span><span class="s2">&quot;/dev/sdm&quot;</span><span class="s0">,</span>
+           <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+           <span class="s1">VolumeId=volume_id</span>
+       <span class="s1">)</span>
+       <span class="s1">time.sleep(</span><span class="s4">2</span><span class="s1">)</span>
+       <span class="s3">#print(&quot;Attached EBS: {0} to instance {1}:&quot; .format(volume_id,instance_id))</span>
+       <span class="s1">public_ip = eip_allocation[</span><span class="s2">&quot;PublicIp&quot;</span><span class="s1">]</span>
+       <span class="s1">time.sleep(</span><span class="s4">40</span><span class="s1">)</span>
+       <span class="s0">try</span><span class="s1">:</span>
+           <span class="s1">ssh_client = paramiko.SSHClient()</span>
+           <span class="s1">ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())</span>
+           <span class="s1">key = paramiko.RSAKey.from_private_key_file(private_key_path)</span>
+           <span class="s1">ssh_client.connect(hostname=public_ip</span><span class="s0">, </span><span class="s1">username=</span><span class="s2">'ubuntu'</span><span class="s0">, </span><span class="s1">pkey=key)</span>
+           <span class="s2">''' 
+           #print(&quot;SSH connection established successfully!&quot;) 
+           stdin, stdout, stderr = ssh_client.exec_command('lsblk') 
+           # Read the command output 
+           output = stdout.read().decode('utf-8') 
+           # Print the output 
+           #print(&quot;lsblk output:</span><span class="s0">\n</span><span class="s2">&quot;, output) 
+           time.sleep(2) 
+           mkdirectory_command = &quot;sudo mkdir myvolume&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(mkdirectory_command) 
+           list_command = &quot;ls -l&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(list_command) 
+           output2 = stdout.read().decode('utf-8') 
+           #print(&quot;list command  output:</span><span class="s0">\n</span><span class="s2">&quot;, output2) 
+           mkfs_command = &quot;sudo mkfs.ext4 /dev/vdb&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(mkfs_command) 
+           time.sleep(2) 
+           mnt_command = &quot;sudo mount /dev/vdb myvolume&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(mnt_command) 
+           output4 = stdout.read().decode('utf-8') 
+           #print(output4) 
+           time.sleep(10) 
+           move_command = &quot;cd /home/ubuntu/myvolume&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(move_command) 
+           time.sleep(2) 
+           pwd_command = &quot;pwd&quot; 
+           stdin, stdout, stderr = ssh_client.exec_command(pwd_command) 
+           output5 = stdout.read().decode('utf-8') 
+           #print(&quot;pwd command  output:</span><span class="s0">\n</span><span class="s2">&quot;, output5) 
+           time.sleep(2) 
+           #device_name = 'home/ubuntu/myvolume' 
+           # Execute the dd command to write data to the attached volume 
+           #dd_command = f&quot;sudo dd if=/path/to/source/file of=/dev/{device_name}&quot; 
+           #dd_command = f&quot;sudo dd if =/dev/zero of = bs = 1M count = 500&quot; 
+           #dd_command = f'sudo dd if=/dev/zero of={device_name} bs=1M count=900' 
+           dd_command = f'sudo dd if=/dev/zero of=/home/ubuntu/myvolume/file.txt bs=1M count=800' 
+           stdin, stdout, stderr = ssh_client.exec_command(dd_command) 
+           time.sleep(2) 
+           output6 = stdout.read().decode('utf-8') 
+           #print(&quot;dd command  output:</span><span class="s0">\n</span><span class="s2">&quot;, output6) 
+           '''</span>
+           <span class="s1">commands = [</span>
+               <span class="s2">'lsblk'</span><span class="s0">,</span>
+               <span class="s2">'sudo mkdir myvolume'</span><span class="s0">,</span>
+               <span class="s2">'sudo mkfs.ext4 /dev/vdb'</span><span class="s0">,</span>
+               <span class="s2">'sudo mount /dev/vdb myvolume'</span><span class="s0">,</span>
+               <span class="s2">'cd /home/ubuntu/myvolume'</span><span class="s0">,</span>
+               <span class="s2">f'sudo dd if=/dev/zero of=/home/ubuntu/myvolume/file.txt bs=1M count=5000'</span>
+
+           <span class="s1">]</span>
+           <span class="s1">ec2.create_snapshot(VolumeId=volume_id</span><span class="s0">, </span><span class="s1">Description=</span><span class="s2">&quot;Snapshot of EC2 instance{i}&quot;</span><span class="s1">)</span>
+           <span class="s1">ec2.create_snapshot(VolumeId=volume_id)</span>
+           <span class="s0">for </span><span class="s1">command </span><span class="s0">in </span><span class="s1">commands:</span>
+               <span class="s1">stdin</span><span class="s0">, </span><span class="s1">stdout</span><span class="s0">, </span><span class="s1">stderr = ssh_client.exec_command(command)</span>
+               <span class="s1">output = stdout.read().decode(</span><span class="s2">'utf-8'</span><span class="s1">)</span>
+               <span class="s1">error = stderr.read().decode(</span><span class="s2">'utf-8'</span><span class="s1">)</span>
+               <span class="s1">print(</span><span class="s2">f'Command: </span><span class="s0">{</span><span class="s1">command</span><span class="s0">}\n</span><span class="s2">Output: </span><span class="s0">{</span><span class="s1">output</span><span class="s0">}\n</span><span class="s2">Error: </span><span class="s0">{</span><span class="s1">error</span><span class="s0">}\n</span><span class="s2">'</span><span class="s1">)</span>
+               <span class="s1">time.sleep(</span><span class="s4">2</span><span class="s1">)</span>
+           <span class="s1">stdin</span><span class="s0">, </span><span class="s1">stdout</span><span class="s0">, </span><span class="s1">stderr = ssh_client.exec_command(</span><span class="s2">'df -h'</span><span class="s1">)</span>
+           <span class="s1">output7 = stdout.read().decode(</span><span class="s2">'utf-8'</span><span class="s1">)</span>
+           <span class="s3"># Print the output</span>
+           <span class="s3">#print(output7)</span>
+           <span class="s1">pattern = </span><span class="s2">r'/dev/vdb\s+\d+M\s+\d+M\s+\d+M\s+(\d+)%'</span>
+           <span class="s1">match = re.search(pattern</span><span class="s0">, </span><span class="s1">output7)</span>
+           <span class="s0">if </span><span class="s1">match:</span>
+               <span class="s1">usage_percentage = int(match.group(</span><span class="s4">1</span><span class="s1">))</span>
+               <span class="s0">if </span><span class="s1">usage_percentage &gt; </span><span class="s4">70</span><span class="s1">:</span>
+                   <span class="s3">#print(&quot;{name_prefix}-{i}Usage of Volume: {0} is more than 70 %:&quot;.format(volume_id),{name_prefix}-{i},&quot;\n&quot;)</span>
+                   <span class="s1">print(</span><span class="s2">f&quot;</span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">} </span><span class="s2">vm, attached Volume </span><span class="s0">{</span><span class="s1">volume_id</span><span class="s0">} </span><span class="s2">usage is more than 70 % </span><span class="s0">\n </span><span class="s2">&quot;</span><span class="s1">)</span>
+                   <span class="s1">print(</span><span class="s2">f&quot;Taking snapshot of </span><span class="s0">{</span><span class="s1">volume_id</span><span class="s0">}</span><span class="s2">&quot;</span><span class="s1">)</span>
+                   <span class="s1">ec2.create_snapshot(VolumeId=volume_id)</span>
+                   <span class="s1">time.sleep(</span><span class="s4">2</span><span class="s1">)</span>
+               <span class="s0">else</span><span class="s1">:</span>
+                   <span class="s1">print(</span><span class="s2">f&quot;</span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">} </span><span class="s2">vm, attached Volume </span><span class="s0">{</span><span class="s1">volume_id</span><span class="s0">} </span><span class="s2">usage is less than 70 % </span><span class="s0">\n </span><span class="s2">&quot;</span><span class="s1">)</span>
+           <span class="s0">else</span><span class="s1">:</span>
+               <span class="s1">print(</span><span class="s2">&quot;No match found for /dev/vdb&quot;</span><span class="s1">)</span>
+           <span class="s1">ssh_client.close()</span>
+           <span class="s1">ssh_client = paramiko.SSHClient()</span>
+           <span class="s1">ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())</span>
+           <span class="s1">ssh_client.connect(</span><span class="s2">'10.16.4.189'</span><span class="s0">, </span><span class="s1">username = </span><span class="s2">'root'</span><span class="s0">, </span><span class="s1">password = </span><span class="s2">'rackattack'</span><span class="s1">)</span>
+           <span class="s1">print(</span><span class="s2">&quot;</span><span class="s0">\n\n</span><span class="s2">conncted to host sucessfully</span><span class="s0">\n\n</span><span class="s2">&quot;</span><span class="s1">)</span>
+           <span class="s1">command_symp1=</span><span class="s2">f'symp -u user2 -d account2 -r vpc2-project -p Cloud@2024 -k volume retype </span><span class="s0">{</span><span class="s1">formatted_volume_id</span><span class="s0">} </span><span class="s2">--new-volume-type-id a92326d0-27ef-431e-9a58-60dd3185fc3a'</span>
+           <span class="s1">stdin</span><span class="s0">, </span><span class="s1">stdout</span><span class="s0">, </span><span class="s1">stderr = ssh_client.exec_command(command_symp1)</span>
+           <span class="s1">time.sleep(</span><span class="s4">2</span><span class="s1">)</span>
+           <span class="s1">five = stdout.read().decode(</span><span class="s2">'utf-8'</span><span class="s1">)</span>
+           <span class="s1">print(</span><span class="s2">&quot;volume migration done</span><span class="s0">\n</span><span class="s2">&quot;</span><span class="s0">, </span><span class="s1">five)</span>
+           <span class="s1">ssh_client.close()</span>
+       <span class="s0">except </span><span class="s1">Exception </span><span class="s0">as </span><span class="s1">e:</span>
+           <span class="s1">print(</span><span class="s2">f&quot;An unexpected error occurred: </span><span class="s0">{</span><span class="s1">str(e)</span><span class="s0">}</span><span class="s2">&quot;</span><span class="s1">)</span>
+       <span class="s3">#finally:</span>
+           <span class="s3">#if ssh_client is not None and ssh_client.get_transport() is not None:</span>
+               <span class="s3">#ssh_client.close()</span>
+
+<span class="s1">response = </span><span class="s2">''</span>
+<span class="s1">instances = </span><span class="s2">''</span>
+<span class="s1">response = ec2.describe_instances()</span>
+<span class="s1">instances = response[</span><span class="s2">'Reservations'</span><span class="s1">]</span>
+
+<span class="s3"># Loop through the instances and volumes</span>
+<span class="s0">for </span><span class="s1">instance </span><span class="s0">in </span><span class="s1">instances:</span>
+    <span class="s1">instance_id = instance[</span><span class="s2">'Instances'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s2">'InstanceId'</span><span class="s1">]</span>
+    <span class="s1">volumes = instance[</span><span class="s2">'Instances'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s2">'BlockDeviceMappings'</span><span class="s1">]</span>
+
+    <span class="s3"># Print the instance ID and its volumes</span>
+    <span class="s1">print(</span><span class="s2">&quot;Instance ID:&quot;</span><span class="s0">, </span><span class="s1">instance_id)</span>
+    <span class="s1">print(</span><span class="s2">&quot;Volumes:&quot;</span><span class="s1">)</span>
+
+    <span class="s3"># Loop through the volumes attached to the instance</span>
+    <span class="s0">for </span><span class="s1">volume </span><span class="s0">in </span><span class="s1">volumes:</span>
+        <span class="s1">volume_id = volume[</span><span class="s2">'Ebs'</span><span class="s1">][</span><span class="s2">'VolumeId'</span><span class="s1">]</span>
+        <span class="s1">print(</span><span class="s2">&quot;testing&quot;</span><span class="s0">, </span><span class="s1">volume_id)</span>
+        <span class="s0">try</span><span class="s1">:</span>
+            <span class="s3"># Detach the volume from the instance</span>
+            <span class="s1">ec2.stop_instances(InstanceIds=[instance_id])</span>
+
+            <span class="s3"># Wait for the instance to be stopped before terminating it</span>
+            <span class="s1">ec2.get_waiter(</span><span class="s2">'instance_stopped'</span><span class="s1">).wait(InstanceIds=[instance_id])</span>
+
+            <span class="s3"># Terminate the instance</span>
+            <span class="s1">ec2.terminate_instances(InstanceIds=[instance_id])</span>
+            <span class="s1">time.sleep(</span><span class="s4">5</span><span class="s1">)</span>
+            <span class="s0">break</span>
+        <span class="s0">except</span><span class="s1">:</span>
+            <span class="s1">ec2.detach_volume(</span>
+               <span class="s1">VolumeId=volume_id</span><span class="s0">,</span>
+               <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+               <span class="s1">Force=</span><span class="s0">False</span>
+            <span class="s1">)</span>
+
+            <span class="s3"># Wait for the volume to detach</span>
+            <span class="s1">waiter = ec2.get_waiter(</span><span class="s2">'volume_available'</span><span class="s1">)</span>
+            <span class="s1">waiter.wait(VolumeIds=[volume_id])</span>
+            <span class="s1">ec2.stop_instances(InstanceIds=[instance_id])</span>
+
+            <span class="s3"># Wait for the instance to be stopped before terminating it</span>
+            <span class="s1">ec2.get_waiter(</span><span class="s2">'instance_stopped'</span><span class="s1">).wait(InstanceIds=[instance_id])</span>
+
+            <span class="s3"># Terminate the instance</span>
+            <span class="s1">ec2.terminate_instances(InstanceIds=[instance_id])</span>
+            <span class="s1">time.sleep(</span><span class="s4">5</span><span class="s1">)</span>
+            <span class="s1">print(</span><span class="s2">&quot;testing1&quot;</span><span class="s1">)</span>
+            <span class="s3"># Delete the volume</span>
+            <span class="s0">break</span>
+<span class="s1">response = ec2.describe_volumes()</span>
+<span class="s1">print(</span><span class="s2">&quot;test2&quot;</span><span class="s0">, </span><span class="s1">response)</span>
+<span class="s3"># Loop through each volume and delete it</span>
+<span class="s0">for </span><span class="s1">volume </span><span class="s0">in </span><span class="s1">response[</span><span class="s2">'Volumes'</span><span class="s1">]:</span>
+    <span class="s1">volume_id = volume[</span><span class="s2">'VolumeId'</span><span class="s1">]</span>
+    <span class="s1">formatted_volume_id1 = re.sub(</span><span class="s2">r'vol-([a-f0-9]{8})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{4})([a-f0-9]{12})'</span><span class="s0">,</span>
+                                 <span class="s2">r'\1-\2-\3-\4-\5'</span><span class="s0">, </span><span class="s1">volume_id)</span>
+    <span class="s1">ssh_client = paramiko.SSHClient()</span>
+    <span class="s1">ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())</span>
+    <span class="s1">ssh_client.connect(</span><span class="s2">'10.16.4.189'</span><span class="s0">, </span><span class="s1">username=</span><span class="s2">'root'</span><span class="s0">, </span><span class="s1">password=</span><span class="s2">'rackattack'</span><span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">&quot;</span><span class="s0">\n\n</span><span class="s2">conncted to host second time sucessfully</span><span class="s0">\n\n</span><span class="s2">&quot;</span><span class="s1">)</span>
+    <span class="s1">command_symp2 = </span><span class="s2">f'symp -u user2 -d account2 -r vpc2-project -p Cloud@2024 -k volume retype </span><span class="s0">{</span><span class="s1">formatted_volume_id1</span><span class="s0">} </span><span class="s2">--new-volume-type-id d6ad91a0-5eff-4b59-9452-5553e7a6ac32 --vpsa-id  04b08752-b68b-4120-a35b-8cb200a312ca'</span>
+    <span class="s1">stdin</span><span class="s0">, </span><span class="s1">stdout</span><span class="s0">, </span><span class="s1">stderr = ssh_client.exec_command(command_symp2)</span>
+    <span class="s1">time.sleep(</span><span class="s4">2</span><span class="s1">)</span>
+    <span class="s1">five = stdout.read().decode(</span><span class="s2">'utf-8'</span><span class="s1">)</span>
+    <span class="s1">print(</span><span class="s2">&quot;volume migration done</span><span class="s0">\n</span><span class="s2">&quot;</span><span class="s0">, </span><span class="s1">five)</span>
+    <span class="s1">ssh_client.close()</span>
+    <span class="s3">#response = ec2.delete_volume(VolumeId=volume_id)</span>
+    <span class="s3">#print(&quot;Deleted volume:&quot;, volume_id)</span>
+
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>duplicate-entry-list.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #cc7832;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+duplicate-entry-list.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># define the list</span>
+<span class="s1">lst = [</span><span class="s2">1</span><span class="s3">, </span><span class="s2">2</span><span class="s3">, </span><span class="s2">3</span><span class="s3">, </span><span class="s2">4</span><span class="s3">, </span><span class="s2">5</span><span class="s3">, </span><span class="s2">6</span><span class="s3">, </span><span class="s2">7</span><span class="s3">, </span><span class="s2">8</span><span class="s3">, </span><span class="s2">9</span><span class="s3">, </span><span class="s2">3</span><span class="s3">, </span><span class="s2">4</span><span class="s3">, </span><span class="s2">5</span><span class="s1">]</span>
+
+<span class="s0"># create an empty dictionary to store the index values of the duplicates</span>
+<span class="s1">duplicates = {}</span>
+
+<span class="s0"># iterate over the list</span>
+<span class="s3">for </span><span class="s1">i</span><span class="s3">, </span><span class="s1">item </span><span class="s3">in </span><span class="s1">enumerate(lst):</span>
+  <span class="s0"># check if the item is already in the dictionary</span>
+  <span class="s3">if </span><span class="s1">item </span><span class="s3">in </span><span class="s1">duplicates:</span>
+    <span class="s0"># add the index value to the list of index values for this item</span>
+    <span class="s1">duplicates[item].append(i)</span>
+  <span class="s3">else</span><span class="s1">:</span>
+    <span class="s0"># add the item and its index value to the dictionary</span>
+    <span class="s1">duplicates[item] = [i]</span>
+
+<span class="s0"># print the items and their index values</span>
+<span class="s3">for </span><span class="s1">item</span><span class="s3">, </span><span class="s1">indices </span><span class="s3">in </span><span class="s1">duplicates.items():</span>
+  <span class="s3">if </span><span class="s1">len(indices) &gt; </span><span class="s2">1</span><span class="s1">:</span>
+    <span class="s1">print(</span><span class="s4">f&quot;</span><span class="s3">{</span><span class="s1">item</span><span class="s3">} </span><span class="s4">has duplicate indices: </span><span class="s3">{</span><span class="s1">indices</span><span class="s3">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<html>
+<head>
+<title>volumes-class-16-second.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+volumes-class-16-second.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">boto3</span>
+<span class="s0">import </span><span class="s1">time</span>
+<span class="s0">class </span><span class="s1">EC2Manager:</span>
+    <span class="s0">def </span><span class="s1">__init__(self):</span>
+        <span class="s1">CLUSTER_IP = </span><span class="s2">'10.16.145.215'</span>
+        <span class="s1">self.ec2 = boto3.client(</span>
+        <span class="s1">service_name=</span><span class="s2">&quot;ec2&quot;</span><span class="s0">, </span><span class="s1">region_name=</span><span class="s2">&quot;zCompute&quot;</span><span class="s0">,</span>
+        <span class="s1">endpoint_url=</span><span class="s2">&quot;https://%s/api/v2/ec2/&quot; </span><span class="s1">% CLUSTER_IP</span><span class="s0">,</span>
+        <span class="s1">verify=</span><span class="s0">False</span>
+        <span class="s1">)</span>
+        <span class="s3">#self.instances = []</span>
+        <span class="s3">#self.volumes = []</span>
+    <span class="s0">def </span><span class="s1">launch_instance(self</span><span class="s0">, </span><span class="s1">image_id</span><span class="s0">, </span><span class="s1">instance_type):</span>
+        <span class="s1">name_prefix = </span><span class="s2">&quot;my-test-17-01-10-vm&quot;</span>
+        <span class="s1">vm_name = </span><span class="s2">f&quot;</span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+        <span class="s1">response = self.ec2.run_instances(</span>
+            <span class="s1">ImageId=image_id</span><span class="s0">,</span>
+            <span class="s1">MinCount=</span><span class="s4">1</span><span class="s0">,</span>
+            <span class="s1">MaxCount=</span><span class="s4">1</span><span class="s0">,</span>
+            <span class="s1">InstanceType=instance_type</span><span class="s0">,</span>
+            <span class="s1">TagSpecifications = [</span>
+            <span class="s1">{</span>
+                <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;instance&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                        <span class="s2">&quot;Value&quot;</span><span class="s1">: vm_name</span>
+                    <span class="s1">}</span>
+                <span class="s1">]</span>
+            <span class="s1">}</span>
+        <span class="s1">]</span>
+        <span class="s1">)</span>
+        <span class="s1">waiter = self.ec2.get_waiter(</span><span class="s2">'instance_running'</span><span class="s1">)</span>
+        <span class="s3">#waiter.wait(InstanceIds= response['Instances'][0]['InstanceId'])</span>
+        <span class="s3">#waiter.wait(InstanceIds=[instance_id, ])</span>
+        <span class="s1">waiter.wait(InstanceIds=[response[</span><span class="s2">'Instances'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s2">'InstanceId'</span><span class="s1">]</span><span class="s0">, </span><span class="s1">])</span>
+        <span class="s3">#self.instances.append(response['Instances'][0]['InstanceId'])</span>
+
+        <span class="s0">return </span><span class="s1">response[</span><span class="s2">'Instances'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s2">'InstanceId'</span><span class="s1">]</span>
+
+
+    <span class="s0">def </span><span class="s1">create_volume(self</span><span class="s0">, </span><span class="s1">availability_zone</span><span class="s0">, </span><span class="s1">size):</span>
+        <span class="s1">name_prefix = </span><span class="s2">&quot;my-volume-test-17-01&quot;</span>
+        <span class="s1">volume_name = </span><span class="s2">f&quot;</span><span class="s0">{</span><span class="s1">name_prefix</span><span class="s0">}</span><span class="s2">-</span><span class="s0">{</span><span class="s1">i</span><span class="s0">}</span><span class="s2">&quot;</span>
+        <span class="s1">response = self.ec2.create_volume(</span>
+            <span class="s1">AvailabilityZone=availability_zone</span><span class="s0">,</span>
+            <span class="s1">Size=size</span><span class="s0">,</span>
+            <span class="s1">TagSpecifications = [</span>
+            <span class="s1">{</span>
+                <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;volume&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                        <span class="s2">&quot;Value&quot;</span><span class="s1">: volume_name</span>
+                    <span class="s1">}</span>
+                <span class="s1">]</span>
+            <span class="s1">}</span>
+        <span class="s1">]</span>
+        <span class="s1">)</span>
+        <span class="s1">time.sleep(</span><span class="s4">20</span><span class="s1">)</span>
+        <span class="s1">waiter = self.ec2.get_waiter(</span><span class="s2">'volume_available'</span><span class="s1">)</span>
+        <span class="s3">#waiter.wait(VolumeIds=response['VolumeId'])</span>
+        <span class="s3">#waiter.wait(VolumeIds=[volume_id, ])</span>
+        <span class="s1">waiter.wait(VolumeIds=[response[</span><span class="s2">'VolumeId'</span><span class="s1">]</span><span class="s0">, </span><span class="s1">])</span>
+        <span class="s3">#self.volumes.append(response['VolumeId'])</span>
+        <span class="s1">self.ec2.create_snapshot(</span>
+                <span class="s1">VolumeId=response[</span><span class="s2">'VolumeId'</span><span class="s1">]</span><span class="s0">,</span>
+                <span class="s1">Description=</span><span class="s2">&quot;Snapshot of EC2 instance&quot;</span><span class="s0">,</span>
+                <span class="s1">TagSpecifications = [</span>
+            <span class="s1">{</span>
+                <span class="s2">&quot;ResourceType&quot;</span><span class="s1">: </span><span class="s2">&quot;snapshot&quot;</span><span class="s0">,</span>
+                <span class="s2">&quot;Tags&quot;</span><span class="s1">: [</span>
+                    <span class="s1">{</span>
+                        <span class="s2">&quot;Key&quot;</span><span class="s1">: </span><span class="s2">&quot;Name&quot;</span><span class="s0">,</span>
+                        <span class="s2">&quot;Value&quot;</span><span class="s1">: response[</span><span class="s2">'VolumeId'</span><span class="s1">]</span>
+                    <span class="s1">}</span>
+                <span class="s1">]</span>
+               <span class="s1">}</span>
+            <span class="s1">]</span>
+        <span class="s1">)</span>
+        <span class="s0">return </span><span class="s1">response[</span><span class="s2">'VolumeId'</span><span class="s1">]</span>
+
+    <span class="s0">def </span><span class="s1">attach_volume(self</span><span class="s0">, </span><span class="s1">instance_id</span><span class="s0">, </span><span class="s1">volume_id</span><span class="s0">, </span><span class="s1">device):</span>
+        <span class="s1">self.ec2.attach_volume(</span>
+            <span class="s1">VolumeId=volume_id</span><span class="s0">,</span>
+            <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+            <span class="s1">Device=device</span>
+        <span class="s1">)</span>
+        <span class="s1">time.sleep(</span><span class="s4">20</span><span class="s1">)</span>
+    <span class="s0">def </span><span class="s1">detach_volume(self</span><span class="s0">, </span><span class="s1">instance_id</span><span class="s0">, </span><span class="s1">volume_id</span><span class="s0">, </span><span class="s1">device):</span>
+        <span class="s1">self.ec2.detach_volume(</span>
+            <span class="s1">VolumeId=volume_id</span><span class="s0">,</span>
+            <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+            <span class="s1">Device=device</span><span class="s0">,</span>
+            <span class="s1">Force=</span><span class="s0">True</span>
+        <span class="s1">)</span>
+        <span class="s1">time.sleep(</span><span class="s4">20</span><span class="s1">)</span>
+    <span class="s0">def </span><span class="s1">delete_volume(self</span><span class="s0">, </span><span class="s1">volume_id):</span>
+        <span class="s1">self.ec2.delete_volume(VolumeId=volume_id)</span>
+        <span class="s3">#self.ec2.volumes.remove(volume_id)</span>
+        <span class="s1">time.sleep(</span><span class="s4">20</span><span class="s1">)</span>
+
+    <span class="s0">def </span><span class="s1">terminate_instance(self</span><span class="s0">, </span><span class="s1">instance_id):</span>
+        <span class="s1">self.ec2.terminate_instances(InstanceIds=[instance_id])</span>
+        <span class="s3">#self.instances.remove(instance_id)</span>
+        <span class="s1">time.sleep(</span><span class="s4">20</span><span class="s1">)</span>
+
+<span class="s3"># Create an EC2Manager object</span>
+<span class="s1">manager = EC2Manager()</span>
+<span class="s0">for </span><span class="s1">i </span><span class="s0">in </span><span class="s1">range(</span><span class="s4">50</span><span class="s1">):</span>
+    <span class="s1">Instance_Id = manager.launch_instance(</span><span class="s2">'ami-4778625e42ae42eebf159a4416fca93a'</span><span class="s0">, </span><span class="s2">'t2.micro'</span><span class="s1">)</span>
+    <span class="s3">#time.sleep(20)</span>
+    <span class="s1">Volume_Id = manager.create_volume(</span><span class="s2">'symphony'</span><span class="s0">, </span><span class="s4">1</span><span class="s1">)</span>
+    <span class="s3">#time.sleep(20)</span>
+    <span class="s1">manager.attach_volume(Instance_Id</span><span class="s0">,</span><span class="s1">Volume_Id</span><span class="s0">, </span><span class="s2">'/dev/sdm'</span><span class="s1">)</span>
+    <span class="s3">#time.sleep(20)</span>
+    <span class="s1">manager.detach_volume(Instance_Id</span><span class="s0">,</span><span class="s1">Volume_Id </span><span class="s0">, </span><span class="s2">'/dev/sdm'</span><span class="s1">)</span>
+    <span class="s3">#time.sleep(500)</span>
+    <span class="s1">manager.delete_volume(Volume_Id)</span>
+    <span class="s1">manager.terminate_instance(Instance_Id)</span>
+</pre>
+</body>
+</html>

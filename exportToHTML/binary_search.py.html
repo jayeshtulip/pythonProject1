@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>binary_search.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #a9b7c6;}
+.s1 { color: #cc7832;}
+.s2 { color: #6897bb;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+binary_search.py</font>
+</center></td></tr></table>
+<pre>
+<span class="s1">def </span><span class="s0">binary_search(list1</span><span class="s1">,</span><span class="s0">number):</span>
+    <span class="s0">low = </span><span class="s2">0</span>
+    <span class="s0">mid = </span><span class="s2">0</span>
+    <span class="s0">high = len(list1) - </span><span class="s2">1</span>
+    <span class="s1">while </span><span class="s0">low &lt; high:</span>
+        <span class="s0">mid = (high + low) // </span><span class="s2">2</span>
+        <span class="s1">if </span><span class="s0">number &lt; list1[mid]:</span>
+            <span class="s0">high = mid</span>
+        <span class="s1">elif </span><span class="s0">number &gt; list1[mid]:</span>
+            <span class="s0">low = mid</span>
+        <span class="s1">else</span><span class="s0">:</span>
+            <span class="s1">return </span><span class="s0">mid</span>
+    <span class="s1">return </span><span class="s0">-</span><span class="s2">1</span>
+<span class="s0">list1 = [</span><span class="s2">1</span><span class="s1">,</span><span class="s2">3</span><span class="s1">,</span><span class="s2">6</span><span class="s1">,</span><span class="s2">9</span><span class="s1">,</span><span class="s2">11</span><span class="s0">]</span>
+<span class="s0">number = </span><span class="s2">19</span>
+<span class="s0">result=binary_search(list1</span><span class="s1">,</span><span class="s0">number)</span>
+<span class="s1">if </span><span class="s0">result != -</span><span class="s2">1</span><span class="s0">:</span>
+    <span class="s0">print(</span><span class="s3">&quot;Element is present at index&quot;</span><span class="s1">, </span><span class="s0">str(result))</span>
+<span class="s1">else</span><span class="s0">:</span>
+    <span class="s0">print(</span><span class="s3">&quot;Element is not present in array&quot;</span><span class="s0">)</span>
+</pre>
+</body>
+</html>

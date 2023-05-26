@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>flask-application.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #cc7832;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+flask-application.py</font>
+</center></td></tr></table>
+<pre><span class="s0">'''This program imports the Flask class from the flask module and creates a new instance of it. 
+It then defines a route for the default home page by decorating the home() function with the @app.route decorator. 
+ 
+When the program is run, the development server is started and the app is served at http://localhost:5000/. 
+You can access the home page by visiting this URL in your web browser. 
+ 
+To build a more fully-featured Flask application, you can add additional routes and functions to handle different HTTP methods 
+ and URLs, and use templates to render HTML pages with dynamic content. You can also use Flask's built-in support 
+ for interacting with databases, handling forms, and other common web development tasks. 
+'''</span>
+<span class="s2"># import the Flask class from the flask module</span>
+<span class="s3">from </span><span class="s1">flask </span><span class="s3">import </span><span class="s1">Flask</span>
+
+<span class="s2"># create a new instance of the Flask class</span>
+<span class="s1">app = Flask(__name__)</span>
+
+<span class="s2"># define a route for the default home page</span>
+<span class="s1">@app.route(</span><span class="s4">'/'</span><span class="s1">)</span>
+<span class="s3">def </span><span class="s1">home():</span>
+  <span class="s3">return </span><span class="s4">&quot;Welcome to my Flask app!&quot;</span>
+
+<span class="s2"># start the development server using the run() method</span>
+<span class="s3">if </span><span class="s1">__name__ == </span><span class="s4">'__main__'</span><span class="s1">:</span>
+  <span class="s1">app.run()</span>
+</pre>
+</body>
+</html>

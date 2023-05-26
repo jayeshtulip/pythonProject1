@@ -1,0 +1,75 @@
+<html>
+<head>
+<title>sample-oop-programe.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+sample-oop-programe.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># define the Animal class This program defines three classes: Animal, Dog, and Cat.</span>
+<span class="s0"># The Animal class serves as the base class, and the Dog and Cat classes are derived from it,</span>
+<span class="s0"># inheriting all of its attributes and methods. The Dog and Cat classes also have their own unique attributes and methods.</span>
+<span class="s0">#</span>
+<span class="s0"># When the program is run, it creates instances of the Dog and Cat classes and demonstrates how to access</span>
+<span class="s0"># the inherited attributes and methods, as well as the subclass-specific attributes and methods.</span>
+<span class="s2">class </span><span class="s1">Animal:</span>
+  <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">name</span><span class="s2">, </span><span class="s1">species):</span>
+    <span class="s1">self.name = name</span>
+    <span class="s1">self.species = species</span>
+
+  <span class="s2">def </span><span class="s1">make_sound(self</span><span class="s2">, </span><span class="s1">sound):</span>
+    <span class="s1">print(</span><span class="s3">f&quot;This animal says </span><span class="s2">{</span><span class="s1">sound</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+<span class="s0"># define the Dog class, which inherits from the Animal class</span>
+<span class="s2">class </span><span class="s1">Dog(Animal):</span>
+  <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">name</span><span class="s2">, </span><span class="s1">breed</span><span class="s2">, </span><span class="s1">toy):</span>
+    <span class="s1">super().__init__(name</span><span class="s2">, </span><span class="s1">species=</span><span class="s3">&quot;Dog&quot;</span><span class="s1">) </span><span class="s0"># call the super class's constructor</span>
+    <span class="s1">self.breed = breed</span>
+    <span class="s1">self.toy = toy</span>
+
+  <span class="s2">def </span><span class="s1">play(self):</span>
+    <span class="s1">print(</span><span class="s3">f&quot;</span><span class="s2">{</span><span class="s1">self.name</span><span class="s2">} </span><span class="s3">plays with their </span><span class="s2">{</span><span class="s1">self.toy</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+<span class="s0"># define the Cat class, which also inherits from the Animal class</span>
+<span class="s2">class </span><span class="s1">Cat(Animal):</span>
+  <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">name</span><span class="s2">, </span><span class="s1">breed</span><span class="s2">, </span><span class="s1">toy):</span>
+    <span class="s1">super().__init__(name</span><span class="s2">, </span><span class="s1">species=</span><span class="s3">&quot;Cat&quot;</span><span class="s1">) </span><span class="s0"># call the super class's constructor</span>
+    <span class="s1">self.breed = breed</span>
+    <span class="s1">self.toy = toy</span>
+
+  <span class="s2">def </span><span class="s1">play(self):</span>
+    <span class="s1">print(</span><span class="s3">f&quot;</span><span class="s2">{</span><span class="s1">self.name</span><span class="s2">} </span><span class="s3">plays with their </span><span class="s2">{</span><span class="s1">self.toy</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+<span class="s0"># create instances of the Dog and Cat classes</span>
+<span class="s1">dog1 = Dog(</span><span class="s3">&quot;Fido&quot;</span><span class="s2">, </span><span class="s3">&quot;Labrador&quot;</span><span class="s2">, </span><span class="s3">&quot;Bone&quot;</span><span class="s1">)</span>
+<span class="s1">cat1 = Cat(</span><span class="s3">&quot;Fluffy&quot;</span><span class="s2">, </span><span class="s3">&quot;Siamese&quot;</span><span class="s2">, </span><span class="s3">&quot;String&quot;</span><span class="s1">)</span>
+
+<span class="s0"># access the inherited attributes and methods</span>
+<span class="s1">print(dog1.name)</span>
+<span class="s1">print(dog1.species)</span>
+<span class="s1">dog1.make_sound(</span><span class="s3">&quot;Bark&quot;</span><span class="s1">)</span>
+
+<span class="s0"># access the inherited attributes and methods</span>
+<span class="s1">print(cat1.name)</span>
+<span class="s1">print(cat1.species)</span>
+<span class="s1">cat1.make_sound(</span><span class="s3">&quot;Meow&quot;</span><span class="s1">)</span>
+
+<span class="s0"># access the subclass-specific attributes and methods</span>
+<span class="s1">print(dog1.breed)</span>
+<span class="s1">dog1.play()</span>
+
+<span class="s0"># access the subclass-specific attributes and methods</span>
+<span class="s1">print(cat1.breed)</span>
+<span class="s1">cat1.play()</span>
+</pre>
+</body>
+</html>

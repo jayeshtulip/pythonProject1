@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>system-memory.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #808080;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+system-memory.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">psutil</span>
+
+<span class="s2"># Memory</span>
+<span class="s1">memory = psutil.virtual_memory()</span>
+<span class="s1">total_memory = memory.total / (</span><span class="s3">1024.0 </span><span class="s1">** </span><span class="s3">2</span><span class="s1">)  </span><span class="s2"># total memory in MB</span>
+<span class="s1">available_memory = memory.available / (</span><span class="s3">1024.0 </span><span class="s1">** </span><span class="s3">2</span><span class="s1">)  </span><span class="s2"># available memory in MB</span>
+<span class="s1">used_memory = total_memory - available_memory  </span><span class="s2"># used memory in MB</span>
+<span class="s1">memory_percent = memory.percent  </span><span class="s2"># memory usage percentage</span>
+<span class="s1">print(</span><span class="s4">&quot;Total Memory: {:.2f}MB&quot;</span><span class="s1">.format(total_memory))</span>
+<span class="s1">print(</span><span class="s4">&quot;Used Memory: {:.2f}MB&quot;</span><span class="s1">.format(used_memory))</span>
+<span class="s1">print(</span><span class="s4">&quot;Available Memory: {:.2f}MB&quot;</span><span class="s1">.format(available_memory))</span>
+<span class="s1">print(</span><span class="s4">&quot;Memory Usage: {:.2f}%&quot;</span><span class="s1">.format(memory_percent))</span>
+
+<span class="s2"># Disk</span>
+<span class="s1">disk = psutil.disk_usage(</span><span class="s4">&quot;/&quot;</span><span class="s1">)</span>
+<span class="s1">total_disk = disk.total / (</span><span class="s3">1024.0 </span><span class="s1">** </span><span class="s3">3</span><span class="s1">)  </span><span class="s2"># total disk in GB</span>
+<span class="s1">available_disk = disk.free / (</span><span class="s3">1024.0 </span><span class="s1">** </span><span class="s3">3</span><span class="s1">)  </span><span class="s2"># available disk in GB</span>
+<span class="s1">used_disk = total_disk - available_disk  </span><span class="s2"># used disk in GB</span>
+<span class="s1">disk_percent = disk.percent  </span><span class="s2"># disk usage percentage</span>
+<span class="s1">print(</span><span class="s4">&quot;</span><span class="s0">\n</span><span class="s4">Total Disk Space: {:.2f}GB&quot;</span><span class="s1">.format(total_disk))</span>
+<span class="s1">print(</span><span class="s4">&quot;Used Disk Space: {:.2f}GB&quot;</span><span class="s1">.format(used_disk))</span>
+<span class="s1">print(</span><span class="s4">&quot;Available Disk Space: {:.2f}GB&quot;</span><span class="s1">.format(available_disk))</span>
+<span class="s1">print(</span><span class="s4">&quot;Disk Usage: {:.2f}%&quot;</span><span class="s1">.format(disk_percent))</span>
+
+</pre>
+</body>
+</html>

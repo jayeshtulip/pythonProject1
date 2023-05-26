@@ -1,0 +1,60 @@
+<html>
+<head>
+<title>volume-creation-pytest.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+volume-creation-pytest.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">pytest</span>
+<span class="s0">import </span><span class="s1">boto3</span>
+<span class="s2">''''To run this test, you would need to install pytest and boto3, and then run the pytest command in the same directory 
+ as the script.Please note that this is just a sample script and you may need to modify it to fit your specific use case.  
+ For example, you would need to provide a valid AMI ID in the ImageId parameter when calling the create_instances() method. 
+  Additionally, you may need to adjust the availability zone and device name based on your requirements.'''</span>
+
+<span class="s1">@pytest.fixture</span>
+<span class="s0">def </span><span class="s1">ec2_resource():</span>
+    <span class="s3"># Create an EC2 resource object</span>
+    <span class="s1">ec2 = boto3.resource(</span><span class="s2">'ec2'</span><span class="s1">)</span>
+    <span class="s0">return </span><span class="s1">ec2</span>
+
+<span class="s0">def </span><span class="s1">test_spawn_vm_create_volume_attach_volume(ec2_resource):</span>
+    <span class="s3"># Spawn a new EC2 instance</span>
+    <span class="s1">instance = ec2_resource.create_instances(</span>
+        <span class="s1">ImageId=</span><span class="s2">'ami-12345678'</span><span class="s0">,</span>
+        <span class="s1">MinCount=</span><span class="s4">1</span><span class="s0">,</span>
+        <span class="s1">MaxCount=</span><span class="s4">1</span>
+    <span class="s1">)</span>
+    <span class="s1">instance_id = instance[</span><span class="s4">0</span><span class="s1">].id</span>
+
+    <span class="s3"># Create an EBS volume</span>
+    <span class="s1">volume = ec2_resource.create_volume(</span>
+        <span class="s1">Size=</span><span class="s4">8</span><span class="s0">,</span>
+        <span class="s1">AvailabilityZone=</span><span class="s2">'us-east-1a'</span>
+    <span class="s1">)</span>
+    <span class="s1">volume_id = volume.id</span>
+
+    <span class="s3"># Attach the volume to the EC2 instance</span>
+    <span class="s1">ec2_resource.attach_volume(</span>
+        <span class="s1">VolumeId=volume_id</span><span class="s0">,</span>
+        <span class="s1">InstanceId=instance_id</span><span class="s0">,</span>
+        <span class="s1">Device=</span><span class="s2">'/dev/xvdf'</span>
+    <span class="s1">)</span>
+
+    <span class="s3"># Verify that the volume is attached</span>
+    <span class="s1">volume = ec2_resource.Volume(volume_id)</span>
+    <span class="s0">assert </span><span class="s1">volume.state == </span><span class="s2">'in-use'</span>
+</pre>
+</body>
+</html>
